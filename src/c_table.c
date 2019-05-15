@@ -8,6 +8,7 @@ typedef struct Item{
 int busy; /* признак занятости элемента */
 char key[8]; /* ключ элемента */
 char *info; /* указатель на информацию */
+int infosize; // размер поля info
 } item;
 
 // обнуляем Item
@@ -67,29 +68,35 @@ void addItem(item *arr_Item){
     printf("Key: ");
     scanf("%7s", k); // ввод ограничен (восемью) семью символами
     clear(); // вызываем функцию очистки буфера
-    printf("Info: ");
-	
-    // принимаем значение *info
-    char *buf = malloc(sizeof(char)*1024);; // буфер для строки из консоли
-	gets(buf);
-	int n = 0; // счётчик введённых символов
-	while(buf[n]!='\0'){
-		n++; // пока не достигли конца строки - считаем
-	}
-	char *info = malloc(sizeof(char)*n+1); // выделяем память (+1 для символа конца строки)
-	strcpy(info, buf); // копируем
-    free(buf); // освобождаем память
+
 
     // проверка уникльности ключа
     if (unique(arr_Item, k) == 0){ // если ключ неуникален
         printf("The array already contains this value: %s", k);
-        free(info); // освобождаем память
         return; // возвращаемся в управляющую процедуру
-    } else {
-        arr_Item[free_element].busy = 1;
-        strcpy(arr_Item[free_element].key, k);
-        arr_Item[free_element].info = info;
     }
+
+    // принимаем значение *info
+    char buffer; // буферное значение для getchar
+	int numberOfElement = -1; // номер элемента массива
+	//char *info; // временный массив для arr_Item.info
+	arr_Item[free_element].info = (char *) malloc(sizeof(char));
+	printf("Info: ");
+	buffer = getchar();
+	while (buffer != '\n') {
+		++numberOfElement;
+		arr_Item[free_element].info = (char *) realloc (arr_Item[free_element].info,numberOfElement+1);
+		arr_Item[free_element].info[numberOfElement] = buffer;
+		buffer = getchar();
+	}
+	arr_Item[free_element].info[numberOfElement+1]='\0';
+    arr_Item[free_element].busy = 1;
+    strcpy(arr_Item[free_element].key, k);
+    //arr_Item[free_element].info = info;
+    arr_Item[free_element].infosize = numberOfElement;
+
+    //free(info);
+
 }
 
     // добавляем элемент с передачей значения аргументом (не используется)
@@ -186,8 +193,13 @@ void selectByKeyRange(item *arr_Item){
     char r1[8]; // нижнее значение диапазона
     char r2[8]; // верхнее значение диапазона
     int c = 0; // номер элемента массива newArr_Item
+    //item newArr_Item[SIZE]; // инициализация массива
     item bufferArr_Item[SIZE]; // буферный массив
+    //int sizeOfNewArray = 0; // размер нового массива
+
+
     zeroItem(bufferArr_Item); // обнуление массива
+
     printf("Select items by key value from: ");
     scanf("%s", r1);
     printf("to: ");
@@ -212,7 +224,6 @@ void selectByKeyRange(item *arr_Item){
     memcpy(&newArr_Item, &bufferArr_Item, sizeof(bufferArr_Item));
     printTable(newArr_Item); // выводим на экран выборку
 }
-
 
 int main(int argCount, const char* args[]){
 
