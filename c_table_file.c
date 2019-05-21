@@ -226,11 +226,10 @@ void selectByKeyRange(item *arr_Item) {
 
 // ввод имени файла
 void fnaming(char *name) {
-	printf("Enter filename: );
-	scanf("%127s", name);
+	printf("Enter filename: ");
+		scanf("%127s", name);
 	clear();
 }
-
 // открытие файла
 FILE * fopening(char *fname) {
 	FILE *fptr = fopen(fname, "rb+");
@@ -247,54 +246,47 @@ FILE * fopening(char *fname) {
 	};
 	return fptr; // возвращаем файловый указатель
 }
-
 // пишем таблицу в файл
 void writeTableToFile(FILE * fp, item *arr_Item) {
 	fwrite(arr_Item, sizeof(item), SIZE, fp); // пишем
 	fflush(fp); // сохраняем
 }
-
 int main(int argCount, const char* args[]) {
-
 	item arr_Item[SIZE]; // инициализация массива
 	zeroItem(arr_Item); // обнуление массива
 	FILE *fp; // указатель на файл
 	char fname[128]; // строка имени файла
 	fnaming(fname);  // вводим имя файла
 	fp = fopening(fname); // открываем файл и инициализируем указатель на файл
-
 	// menu
 	int n = -1;
 	while (n != 0) {
 		printf("\n0 - exit");
-		printf("\n2 - add item to file");
-		printf("\n3 - print item from file by number of element");
-		printf("\n4 - print all not empty items from file");
-		printf("\n5 - remove items by key range");
-		printf("\n6 - remove item by number of element");
-		printf("\n7 - select items by key range");
+		printf("\n1 - add item to file");
+		printf("\n2 - print item from file by number of element");
+		printf("\n3 - print all not empty items from file");
+		printf("\n4 - remove items by key range");
+		printf("\n5 - remove item by number of element");
+		printf("\n6 - select items by key range");
 		puts("");
 		scanf("%d", &n);
 		if (n == 1) {
-			// думаем
-		}
-		else if (n == 2) {
 			addItem(fp, arr_Item); // добавляем новый элемент
 			writeTableToFile(fp, arr_Item); // пишем массив в файл
 		}
-		else if (n == 3) {
+		else if (n == 2) {
 			printOneElement(arr_Item); // выводим один элемент по номеру элемента
 		}
-		else if (n == 4) {
+		else if (n == 3) {
 			printTable(arr_Item, SIZE); // выводим элементы где busy == 1
 		}
-		else if (n == 5) {
+		else if (n == 4) {
 			removeByKeyRange(arr_Item); // удаляем диапазон элементов по значениям key
 		}
-		else if (n == 6) {
+		else if (n == 5) {
 			getNoEandRemove(arr_Item); // удаляем один элемент по его номеру
 		}
-		else if (n == 7) {
+		else if (n == 6) {
 			selectByKeyRange(arr_Item); // выделяем диапазон элементов в отдельный массив и выводим на экран
 		}
 	}
