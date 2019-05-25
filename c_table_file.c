@@ -1,5 +1,5 @@
-#include "pch.h"
-#define _CRT_SECURE_NO_WARNINGS
+//#include "pch.h"
+//#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,17 +9,18 @@ const int SIZE = 10; // размер массива элементов struct It
 typedef struct Item {
 	int busy; /* признак занятости элемента */
 	char key[8]; /* ключ элемента */
-	char *info; /* указатель на информацию */
 	int infosize; // размер поля info
+	char *info; /* указатель на информацию */
 } item;
-
 
 // обнуляем Item
 void zeroItem(struct Item *arr_Item) {
 	for (int i = 0; i < SIZE; ++i) {
 		arr_Item[i].busy = 0;
 		arr_Item[i].key[0] = '\0';
+		arr_Item[i].infosize = 0;
 		arr_Item[i].info = NULL;
+
 	}
 }
 
@@ -69,9 +70,8 @@ void addItem(FILE * fp, item *arr_Item) {
 	// принимаем значение key
 	char k[8]; // переменная для ввода поля key
 	printf("Key: ");
-	scanf("%7s", k); // ввод ограничен семью символами
+	scanf("%7s", k); // ввод ограничен (восемью) семью символами
 	clear(); // вызываем функцию очистки буфера
-
 
 	// проверка уникльности ключа
 	if (unique(arr_Item, k) == 0) { // если ключ неуникален
@@ -82,6 +82,7 @@ void addItem(FILE * fp, item *arr_Item) {
 	// принимаем значение *info
 	char buffer; // буферное значение для getchar
 	int numberOfElement = -1; // номер элемента массива
+	//char *info; // временный массив для arr_Item.info
 	arr_Item[free_element].info = (char *)malloc(sizeof(char));
 	printf("Info: ");
 	buffer = getchar();
@@ -94,38 +95,18 @@ void addItem(FILE * fp, item *arr_Item) {
 	arr_Item[free_element].info[numberOfElement + 1] = '\0';
 	arr_Item[free_element].busy = 1;
 	strcpy(arr_Item[free_element].key, k);
-	arr_Item[free_element].infosize = numberOfElement;
-
+	arr_Item[free_element].infosize = numberOfElement + 2;
 }
 
-// добавляем элемент с передачей значения аргументом (не используется)
-void addItemByArg(item *arr_Item, char k[8], char info[1024]) {
-	int free_element = findfree(arr_Item); // первый свободный элемент массива
-	if (free_element == -1) {
-		printf("The array is full.");
-		return;
-	}
-	if (unique(arr_Item, k) == 0) { // проверка уникльности ключа
-		printf("The array already contains this value: %s", k);
-		return;
-	}
-	arr_Item[free_element].busy = 1;
-	strcpy(arr_Item[free_element].key, k);
-	arr_Item[free_element].info = info;
-}
-
-// печатаем таблицу, только значения busy == 1
 void printTable(item *arr_Item, int size) {
 	if (isNotEmpty(arr_Item)) {
-		printf("     key info\n");
+		printf(" NoE busy      key  infosize info\n");
 		for (int i = 0; i < size; ++i) {
-			if (arr_Item[i].busy == 1) {
-				printf("%8s %s\n", arr_Item[i].key, arr_Item[i].info);
-			}
+			printf("%4d %4d %8s %9d %s\n", i, arr_Item[i].busy, arr_Item[i].key, arr_Item[i].infosize, arr_Item[i].info);
 		}
 	}
 	else {
-		printf("\n%d\n", isNotEmpty(arr_Item));
+		//printf("\n%d\n", isNotEmpty(arr_Item));
 		printf("\nTable is empty. Try add some information.\n");
 	}
 }
@@ -155,10 +136,11 @@ void removeByNumberOfElement(item *arr_Item, int noe) {
 	}
 	arr_Item[noe].busy = 0;
 	arr_Item[noe].key[0] = '\0';
+	arr_Item[noe].infosize = 0;
 	arr_Item[noe].info = NULL;
 }
 
-// получаем номер элемента которых хотим удалить
+// получаем номер элемента который хотим удалить
 void getNoEandRemove(item *arr_Item) {
 	int noe;
 	printf("Enter NoE: ");
@@ -196,8 +178,8 @@ void selectByKeyRange(item *arr_Item) {
 	char r1[8]; // нижнее значение диапазона
 	char r2[8]; // верхнее значение диапазона
 	int c = 0; // номер элемента массива newArr_Item
-	item *newArr_Item; // массив для выборки
-	newArr_Item = (item*)malloc(20);
+	item *newArr_Item = (item*)malloc(sizeof(arr_Item)); // массив для выборки
+	//newArr_Item = (item*)malloc(20);
 
 	printf("Select items by key value from: ");
 	scanf("%s", r1);
@@ -227,7 +209,7 @@ void selectByKeyRange(item *arr_Item) {
 // ввод имени файла
 void fnaming(char *name) {
 	printf("Enter filename: ");
-		scanf("%127s", name);
+	scanf("%127s", name);
 	clear();
 }
 // открытие файла
@@ -238,7 +220,7 @@ FILE * fopening(char *fname) {
 		fptr = fopen(fname, "wb+"); // создаём его
 		if (fptr == NULL) { // если открыть или создать файл не удалось
 			puts("Still cannot create and read file");
-			return nullptr; // прерываем выполнение функции, возвращаемся
+			return NULL; // прерываем выполнение функции, возвращаемся
 		}
 		else {
 			puts("File was created successfully.");
@@ -248,8 +230,25 @@ FILE * fopening(char *fname) {
 }
 // пишем таблицу в файл
 void writeTableToFile(FILE * fp, item *arr_Item) {
-	fwrite(arr_Item, sizeof(item), SIZE, fp); // пишем
-	fflush(fp); // сохраняем
+	for (int i = 0; i < SIZE; ++i) {
+		fwrite(&arr_Item[i].busy, 4, 1, fp); // пишем
+		fwrite(arr_Item[i].key, 8, 1, fp);
+		fwrite(&arr_Item[i].infosize, 4, 1, fp);
+		fwrite(arr_Item[i].info, arr_Item[i].infosize, 1, fp);
+	}
+	//fflush(fp); // сохраняем
+}
+
+void readTableFromFile(FILE *fp, item *Arr) {
+	//fseek(fp, 0L, SEEK_END);
+	//sz = ftell(fp); // sizeof(file)
+	for (int i = 0; i < SIZE; ++i) {
+		fread(&Arr[i].busy, 4, 1, fp); // пишем
+		fread(Arr[i].key, 8, 1, fp);
+		fread(&Arr[i].infosize, 4, 1, fp);
+		Arr[i].info = (char *)malloc(Arr[i].infosize);
+		fread(Arr[i].info, Arr[i].infosize, 1, fp);
+	}
 }
 int main(int argCount, const char* args[]) {
 	item arr_Item[SIZE]; // инициализация массива
@@ -258,6 +257,7 @@ int main(int argCount, const char* args[]) {
 	char fname[128]; // строка имени файла
 	fnaming(fname);  // вводим имя файла
 	fp = fopening(fname); // открываем файл и инициализируем указатель на файл
+	fclose(fp);
 	// menu
 	int n = -1;
 	while (n != 0) {
@@ -268,11 +268,14 @@ int main(int argCount, const char* args[]) {
 		printf("\n4 - remove items by key range");
 		printf("\n5 - remove item by number of element");
 		printf("\n6 - select items by key range");
+		printf("\n7 - copy from file to array");
 		puts("");
 		scanf("%d", &n);
 		if (n == 1) {
+			fp = fopening(fname);
 			addItem(fp, arr_Item); // добавляем новый элемент
 			writeTableToFile(fp, arr_Item); // пишем массив в файл
+			fclose(fp);
 		}
 		else if (n == 2) {
 			printOneElement(arr_Item); // выводим один элемент по номеру элемента
@@ -282,12 +285,23 @@ int main(int argCount, const char* args[]) {
 		}
 		else if (n == 4) {
 			removeByKeyRange(arr_Item); // удаляем диапазон элементов по значениям key
+			fp = fopening(fname);
+			writeTableToFile(fp, arr_Item); // пишем массив в файл
+			fclose(fp);
 		}
 		else if (n == 5) {
 			getNoEandRemove(arr_Item); // удаляем один элемент по его номеру
+			fp = fopening(fname);
+			writeTableToFile(fp, arr_Item); // пишем массив в файл
+			fclose(fp);
 		}
 		else if (n == 6) {
 			selectByKeyRange(arr_Item); // выделяем диапазон элементов в отдельный массив и выводим на экран
+		}
+		else if (n == 7) {
+			fp = fopening(fname);
+			readTableFromFile(fp, arr_Item); // читаем из файла в массив
+			fclose(fp);
 		}
 	}
 	return 0;
