@@ -375,9 +375,9 @@ void fnaming(Table *ptab) {
 void unload(Table *ptab) {
     puts("Closing files");
     if(fclose(ptab->fdat)){
-        printf("An error occurred while closing \"%s\" file\n", ptab->fTABname);
+        printf("An error occurred while closing \"%s\" file\n", ptab->fDATname);
     }else{
-        printf("File \"%s\" closed successfuly\n", ptab->fTABname);
+        printf("File \"%s\" closed successfuly\n", ptab->fDATname);
     }
 
     if(fclose(ptab->ftab)){
