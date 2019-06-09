@@ -77,7 +77,7 @@ void dialog(Table *ptab) {
         puts("\n0 - Exit.");
         puts("1 - Add item.");
         puts("2 - Remove items by key range.");
-        puts("3 - Print items where bysy == 1.");
+        puts("3 - Print items where busy == 1.");
         puts("4 - Print items by key range.");
         puts("5 - Print full table.\n");
         printf("Enter menu item: --> ");
@@ -229,16 +229,7 @@ void getInfo(Table *ptab, int n) {
     }
     ptab->infoVector[n].info[noe + 1] = '\0'; // указываем конец строки
 }
-// запись данных в файл
-void datawrite(FILE *ft, FILE *fd, Table *ptab) {
-    fwrite(ptab->itemVector, sizeof(Item), SIZE, ft);
 
-    for (int i = 0; i < SIZE; ++i) {
-        if (ptab->itemVector[i].busy) {
-            fwrite(ptab->infoVector[i].info, sizeof(char), ptab->itemVector[i].len, fd);
-        }
-    }
-}
 
 void dataread(FILE *ft, FILE *fd, Table *ptab) {
     fread(ptab->itemVector, sizeof(Item), SIZE, ft);
@@ -250,12 +241,49 @@ void dataread(FILE *ft, FILE *fd, Table *ptab) {
         }
     }
 }
-
+// функция выполняет подготовку к записи и запись данных
 void save(Table *ptab) {
-    ptab->fdat = (ptab->fDATname, "wb+", ptab->fdat);
-    ptab->ftab = (ptab->fDATname, "wb+", ptab->ftab);
-    datawrite(ptab->ftab, ptab->fdat, ptab);
+    // открытие файлов в режиме wb+
+    ptab->fdat = freopen(ptab->fDATname, "wb+", ptab->fdat);
+    ptab->ftab = freopen(ptab->fTABname, "wb+", ptab->ftab);
+
+    datawrite(ptab->ftab, ptab->fdat, ptab); // запись в файл
+
+
+    // очистка буфера и сохранение файлов
+    puts("Trying to save files");
+    if(fflush(ptab->fdat)){
+        printf("An error occurred while saving \"%s\" file\n", ptab->fDATname);
+    }else{
+        printf("File \"%s\" saved successfuly\n", ptab->fDATname);
+    }
+    if(fflush(ptab->ftab)){
+        printf("An error occurred while saving \"%s\" file\n", ptab->fTABname);
+    }else{
+        printf("File \"%s\" saved successfuly\n", ptab->fTABname);
+    }
+    puts("End of save function\n");
 }
+// запись данных в файл (без сохранения)
+void datawrite(FILE *ft, FILE *fd, Table *ptab) {
+    printf("Trying to write \"%s\" file\n", ptab->fDATname);
+    if(fwrite(ptab->itemVector, sizeof(Item), SIZE, ft) != SIZE){
+        printf("An error occurred while writing \"%s\" file\n", ptab->fDATname);
+    }else{
+        printf("File \"%s\" was written successfully\n", ptab->fDATname);
+    }
+    printf("\nTrying to write \"%s\" file\n", ptab->fTABname);
+    for (int i = 0; i < SIZE; ++i) {
+        if (ptab->itemVector[i].busy) {
+            fwrite(ptab->infoVector[i].info, sizeof(char), ptab->itemVector[i].len, fd);
+            printf("%d string is busy: info field was written\n", i);
+        }else{
+            printf("%d string is empty: info field wasn't written\n", i);
+        }
+    }
+    puts("End of write function\n");
+}
+
 
 // функция печатает key и info всех занятых строк
 void printTable(Table *ptab) {
@@ -345,8 +373,19 @@ void fnaming(Table *ptab) {
 
 // закрытие файлов
 void unload(Table *ptab) {
-    fclose(ptab->fdat);
-    fclose(ptab->ftab);
+    puts("Closing files");
+    if(fclose(ptab->fdat)){
+        printf("An error occurred while closing \"%s\" file\n", ptab->fTABname);
+    }else{
+        printf("File \"%s\" closed successfuly\n", ptab->fTABname);
+    }
+
+    if(fclose(ptab->ftab)){
+        printf("An error occurred while closing \"%s\" file\n", ptab->fTABname);
+    }else{
+        printf("File \"%s\" closed successfuly\n", ptab->fTABname);
+    }
+    puts("End of unload function\n");
 }
 
 
