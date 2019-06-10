@@ -1,5 +1,5 @@
-//#include "pch.h"
-//#define _CRT_SECURE_NO_WARNINGS
+#include "pch.h"
+#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -175,6 +175,7 @@ void addItem(Table *ptab) {
 }
 
 // заполнение значения поля offset
+// возможно каждый раз нужно добавлять 1
 void rebuildOffset(Table *ptab) {
 	int bufOffset = 0;
 	for (int i = 1; i < SIZE; ++i) {
@@ -240,7 +241,7 @@ void getInfo(Table *ptab, int n) {
 	ptab->infoVector[n].info[noe + 1] = '\0'; // указываем конец строки
 }
 
-
+// функция чтения данных из файла
 void dataread(FILE *ft, FILE *fd, Table *ptab) {
 	printf("\nTrying to read \"%s\" file..", ptab->fDATname);
 	if (fread(ptab->itemVector, sizeof(Item), SIZE, ft) != SIZE) { // если кол-во прочитанных элементов не равно размеру таблицы
@@ -250,16 +251,30 @@ void dataread(FILE *ft, FILE *fd, Table *ptab) {
 	}
 
 
-	printf("\nTrying to read \"%s\" file..", ptab->fTABname);
-	//int counter1 = 0;
-	//int counter2 = 0;
+	printf("\nTrying to read \"%s\" file..\n", ptab->fTABname);
+	int counter1 = 0;
+	int counter2 = 0;
 	for (int i = 0; i < SIZE; ++i) {
-		if (ptab->itemVector[i].busy) {
-			ptab->infoVector[i].info = (char*)malloc(ptab->itemVector[i].len);
-			fread(ptab->infoVector[i].info, 1, ptab->itemVector[i].len, fd);
+		if (ptab->itemVector[i].busy) { // если строка не пустая
+			ptab->infoVector[i].info = (char*)malloc(ptab->itemVector[i].len); // выделяем память под копирование данных
+			// пытаемся копировать и если скопировано сколько и ожидалось
+			if (fread(ptab->infoVector[i].info, 1, ptab->itemVector[i].len, fd) == ptab->itemVector[i].len) {
+				printf("%d element: copied %d bytes as expected\n", i, ptab->itemVector[i].len);
+			}
+			else { // если количество прочитанных данных не равно ожидаемому числу
+				printf("%d element: WARNING!!! copied %d bytes, wrong number\n", i, ptab->itemVector[i].len);
+			}
+			
+			++counter1; // счётчик прочитанных непустых строк
+		} // если же строка пустая
+		else { // сообщаем что строка пропущена
+			printf("%d element is empty, skipped\n", i);
+			++counter2; // считаем количество пропущенных пустых строк
 		}
 	}
-	printf("\nFile \"%s\" was read..\n", ptab->fTABname); // по крайней мере что-то было прочитано и программа не вылетела
+	printf("\nFile \"%s\" was read..\n", ptab->fTABname);
+	printf("%d items read and %d skipped ..\n", counter1, counter2);
+	printf("Processed %d items. Expected SIZE of table %d items..\n\n", (counter1+counter2), SIZE);
 }
 // функция выполняет подготовку к записи и запись данных
 void save(Table *ptab) {
